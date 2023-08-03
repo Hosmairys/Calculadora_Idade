@@ -24,18 +24,20 @@
 
 //FUNÇÂO Principal
 function calculadoraIdade(event) {
-    
+
     console.log("oi!");
-    event.preventDefault();
+    // event.preventDefault();
 
     let dadosUsuario = pegarValores();
 
     let idade = calcular(dadosUsuario.dia, dadosUsuario.mes, dadosUsuario.ano);
-    
+
     let classificarIdade = classificar(idade);
     console.log(classificarIdade);
 
     let dadosUsuarioAtualizado = organizarObjeto(dadosUsuario, classificarIdade, idade);
+
+    cadastraUsuario(dadosUsuarioAtualizado);
 }
 
 // Passo 1 - Pegar os valores
@@ -63,12 +65,21 @@ function pegarValores() {
 
 // Passo 2 - Calcular a Idade
 function calcular(dia, mes, ano) {
-    let anoAtual = new Date().getFullYear();
-    // console.log(anoAtual);
-    let idade = anoAtual - ano
+    let hoje = new Date();
 
-    console.log(idade);
-    
+    // console.log(anoAtual);
+    let idade = hoje.getFullYear() - ano
+
+    if (hoje.getMonth() > mes) {
+        idade++
+    }
+
+    else if (hoje.getMonth() == mes && hoje.getDate() >= dia) {
+        idade++
+    }
+
+    // console.log(idade);
+
     return idade;
 }
 
@@ -76,9 +87,9 @@ function calcular(dia, mes, ano) {
 function classificar(idade) {
     if (idade < 12) {
         return "Criança"
-    }else if (idade < 17 ) {
+    } else if (idade < 17) {
         return "Adolescente"
-    }else if (idade < 65) {
+    } else if (idade < 65) {
         return "Adulto"
     } else {
         return "Idoso"
@@ -87,15 +98,85 @@ function classificar(idade) {
 
 // Passo 4 - Organizar o objeto pessoa para salvar na lista
 function organizarObjeto(dadosUsuario, classificarIdade, idade) {
-    let dataHoraAtual = Intl.DateTimeFormat("pt-BR", { timeStyle: "long", dateStyle: "short" }).format(Date.now())
+    let nacimento = new Date(`${dadosUsuario.ano}-${dadosUsuario.mes}-${dadosUsuario.dia}`)
+    console.log(dadosUsuario.dia);
+    // let nacimentoFormatado = Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(nacimento);
 
     let dadosUsuarioAtualizado = {
-        ... dadosUsuario, 
+        ...dadosUsuario,
         idade: idade,
         clasificacao: classificarIdade,
-        dataCadastro: dataHoraAtual 
+        nacimento: nacimento
     }
 
-    return dadosUsuarioAtualizado
     console.log(dadosUsuarioAtualizado);
+    return dadosUsuarioAtualizado
+}
+
+
+// Passo 5 - Cadastrar a pessoa na lista
+function cadastraUsuario(usuario) {
+    let listaUsuarios = [];
+
+
+    if (localStorage.getItem("usuariosCadastrados")) {
+        listaUsuarios = JSON.parse(localStorage.getItem("usuariosCadastrados"));
+    }
+
+    listaUsuarios.push(usuario)
+
+    localStorage.setItem("usuariosCadastrados", JSON.stringify(listaUsuarios))
+
+}
+
+
+// Passo 6 - Função para carregar as pessoas, carrega a lista do localStorage, chamar ao carregar a página
+function carregarUsuarios() {
+    let listaUsuarios = [];
+
+    if (localStorage.getItem("usuariosCadastrados")) {
+        listaUsuarios = JSON.parse(localStorage.getItem("usuariosCadastrados"));
+    }
+
+    if (listaUsuarios.length == 0) {
+        let tabela = document.getElementById("corpo-tabela");
+
+        tabela.innerHTML = `<tr class="linha-menssagem">
+        <td colspan="6">Nenhum usuario cadastrado!</td>
+    </tr>`
+
+    } else {
+        montarTabela(listaUsuarios)
+    }
+}
+
+window.addEventListener("DOMContentLoaded", () => {carregarUsuarios()});
+
+
+// Passo 7 - Renderizar o conteúdo da tabela com as pessoas cadastradas
+function montarTabela(listaDeCadastros) {
+    let tabela = document.getElementById("corpo-tabela");
+
+    let template = "";
+    console.log(listaDeCadastros);
+    listaDeCadastros.forEach(pessoa => {
+        template += `<tr>
+        <td data-cell="nome">${pessoa.nome}</td>
+        <td data-cell="data de nacimento">${pessoa.nacimento}</td>
+        <td data-cell="idade">${pessoa.idade}</td>
+        <td data-cell="faixa etária">${pessoa.clasificacao}</td>
+    </tr> `
+    
+    });
+
+    tabela.innerHTML = template;
+
+}
+
+
+// Passo 8 - Botão para limpar os registros;
+function deletarRegistro() {
+    localStorage.removeItem("usuariosCadastrados")
+    window.location.reload();
+
 }
